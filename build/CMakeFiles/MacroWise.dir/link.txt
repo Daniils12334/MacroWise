@@ -1,1 +1,0 @@
-/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/MacroWise.dir/link.d CMakeFiles/MacroWise.dir/src/main.cpp.o CMakeFiles/MacroWise.dir/src/MacroRecorder.cpp.o CMakeFiles/MacroWise.dir/src/UInputDevice.cpp.o CMakeFiles/MacroWise.dir/src/utils.cpp.o -o MacroWise  -lX11 -lpthread

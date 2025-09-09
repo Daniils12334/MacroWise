@@ -1,7 +1,0 @@
-/home/danbar/Desktop/MacroWise/build/CMakeFiles/MacroWise.dir
-/home/danbar/Desktop/MacroWise/build/CMakeFiles/edit_cache.dir
-/home/danbar/Desktop/MacroWise/build/CMakeFiles/rebuild_cache.dir
-/home/danbar/Desktop/MacroWise/build/CMakeFiles/list_install_components.dir
-/home/danbar/Desktop/MacroWise/build/CMakeFiles/install.dir
-/home/danbar/Desktop/MacroWise/build/CMakeFiles/install/local.dir
-/home/danbar/Desktop/MacroWise/build/CMakeFiles/install/strip.dir
