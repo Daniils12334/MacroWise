@@ -7,7 +7,6 @@
 #include <sys/select.h>
 #include <sys/time.h>
 #include <thread>
-#include <filesystem>
 #include <cstring>
 
 MacroRecorder::MacroRecorder(const std::string& mouse_device, const std::string& keyboard_device)
@@ -28,23 +27,71 @@ void MacroRecorder::start_recording(const std::string& macro_name) {
     recording = true;
     events.clear();
     
-    std::thread([this, macro_name]() {
-        record_events();
+    int mouse_fd = open(mouse_device.c_str(), O_RDONLY | O_NONBLOCK);
+    int keyboard_fd = open(keyboard_device.c_str(), O_RDONLY | O_NONBLOCK);
+
+    if (mouse_fd == -1 || keyboard_fd == -1) {
+        perror("Error opening input devices");
+        recording = false;
+        return;
+    }
+
+    int start_x, start_y;
+    utils::get_current_cursor_position(start_x, start_y);
+    std::cout << "Starting cursor position: " << start_x << ", " << start_y << std::endl;
+
+    timeval start_time;
+    gettimeofday(&start_time, nullptr);
+    std::cout << "Recording started... Press F9 to stop" << std::endl;
+
+    while (recording && !should_exit_flag) {
+        input_event ev;
+        fd_set fds;
+        FD_ZERO(&fds);
+        FD_SET(mouse_fd, &fds);
+        FD_SET(keyboard_fd, &fds);
+
+        timeval timeout{0, 100000};
+        int max_fd = std::max(mouse_fd, keyboard_fd) + 1;
         
-        int start_x, start_y;
-        utils::get_current_cursor_position(start_x, start_y);
-        
-        MacroHeader header{start_x, start_y};
-        
-        fs::create_directories(macros_dir);
-        std::string filename = macros_dir + "/" + macro_name + ".macro";
-        
-        if (utils::write_macro_file(filename, header, events)) {
-            std::cout << "Macro saved: " << filename << " (" << events.size() << " events)" << std::endl;
-        } else {
-            std::cout << "Error saving macro" << std::endl;
+        if (select(max_fd, &fds, nullptr, nullptr, &timeout) > 0) {
+            if (FD_ISSET(mouse_fd, &fds) && read(mouse_fd, &ev, sizeof(ev)) == sizeof(ev)) {
+                timeval current_time, relative_time;
+                gettimeofday(&current_time, nullptr);
+                timersub(&current_time, &start_time, &relative_time);
+                
+                input_event timed_ev = ev;
+                timed_ev.time = relative_time;
+                events.push_back(timed_ev);
+            }
+            
+            if (FD_ISSET(keyboard_fd, &fds) && read(keyboard_fd, &ev, sizeof(ev)) == sizeof(ev) && ev.type == EV_KEY) {
+                timeval current_time, relative_time;
+                gettimeofday(&current_time, nullptr);
+                timersub(&current_time, &start_time, &relative_time);
+                
+                input_event timed_ev = ev;
+                timed_ev.time = relative_time;
+                events.push_back(timed_ev);
+            }
         }
-    }).detach();
+    }
+
+    close(mouse_fd);
+    close(keyboard_fd);
+
+    MacroHeader header{start_x, start_y};
+    
+    fs::create_directories(macros_dir);
+    std::string filename = macros_dir + "/" + macro_name + ".macro";
+    
+    if (utils::write_macro_file(filename, header, events)) {
+        std::cout << "Macro saved: " << filename << " (" << events.size() << " events)" << std::endl;
+    } else {
+        std::cout << "Error saving macro" << std::endl;
+    }
+    
+    recording = false;
 }
 
 void MacroRecorder::stop_recording() {
@@ -176,3 +223,4 @@ void MacroRecorder::list_macros() const {
         std::cout << "  " << macro << std::endl;
     }
 }
+

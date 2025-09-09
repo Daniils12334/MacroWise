@@ -9,13 +9,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(X11 REQUIRED x11)
 
+# Check for ncurses
+find_package(Curses REQUIRED)
+
 # Check for xdotool using find_program instead
 find_program(XDOTOOL_EXECUTABLE xdotool)
 if(NOT XDOTOOL_EXECUTABLE)
     message(WARNING "xdotool not found - cursor position features will be limited")
 endif()
 
-# Check for filesystem library (needed for some compilers)
+# Filesystem compatibility
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("
 #include <filesystem>
@@ -26,7 +29,6 @@ int main() {
 " HAS_STD_FILESYSTEM)
 
 if(NOT HAS_STD_FILESYSTEM)
-    # Try with experimental filesystem
     check_cxx_source_compiles("
     #include <experimental/filesystem>
     int main() {
@@ -47,6 +49,7 @@ endif()
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
     ${X11_INCLUDE_DIRS}
+    ${CURSES_INCLUDE_DIRS}
 )
 
 # Source files
@@ -55,6 +58,7 @@ set(SOURCES
     src/MacroRecorder.cpp
     src/UInputDevice.cpp
     src/utils.cpp
+    src/Interface.cpp
 )
 
 # Executable
@@ -64,6 +68,7 @@ add_executable(MacroWise ${SOURCES})
 target_link_libraries(MacroWise
     ${X11_LIBRARIES}
     ${FILESYSTEM_LIB}
+    ${CURSES_LIBRARIES}
     pthread
 )
 
