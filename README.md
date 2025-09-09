@@ -1,0 +1,1 @@
+Can work in games like Counter-strike/Ark/Dota and others(not perfect, but still good), and perfectly works on 2D games and Desktop
